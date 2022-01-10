@@ -97,11 +97,43 @@
 /***************************
  * Integer Division
  ***************************/
-/***
- * TODO: Add support for VSX4(Power10)
- */
 // See simd/intdiv.h for more clarification
 // divide each unsigned 8-bit element by a precomputed divisor
+#if defined(NPY_HAVE_VSX4)
+NPY_FINLINE npyv_u8 npyv_div_u8(npyv_u8 a, npyv_u8 b)
+{
+  const npyv_u8 mask = {
+    0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30
+  };
+  npyv_u32x4 a_expand = npyv_expand_u32_u8(a);
+  npyv_u32x4 b_expand = npyv_expand_u32_u8(b);
+  npyv_u32 divhi1 = vec_div(a_expand.val[0], b_expand.val[0]);
+  npyv_u32 divlo1 = vec_div(a_expand.val[1], b_expand.val[1]);
+  npyv_u32 divhi2 = vec_div(a_expand.val[2], b_expand.val[2]);
+  npyv_u32 divlo2 = vec_div(a_expand.val[3], b_expand.val[3]);
+  npyv_u16 hi = (npyv_u16)vec_perm(divhi1, divlo1, mask);
+  npyv_u16 lo = (npyv_u16)vec_perm(divhi2, divlo2, mask);
+  npyv_u8 res = (npyv_u8)vec_perm(hi, lo, mask);
+  return res;
+}
+
+NPY_FINLINE npyv_u16 npyv_div_u16(npyv_u16 a, npyv_u16 b)
+{
+  const npyv_u8 mask = {
+    0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 24, 25, 28, 29
+  };
+  npyv_u32x2 a_expand = npyv_expand_u32_u16(a);
+  npyv_u32x2 b_expand = npyv_expand_u32_u16(b);
+  npyv_u32 divhi = vec_div(a_expand.val[0], b_expand.val[0]);
+  npyv_u32 divlo = vec_div(a_expand.val[1], b_expand.val[1]);
+  npyv_u16 res = (npyv_u16)vec_perm(divhi, divlo, mask);
+  return res;
+}
+
+#define npyv_div_u32 vec_div
+#define npyv_div_u64 vec_div
+
+#endif
 NPY_FINLINE npyv_u8 npyv_divc_u8(npyv_u8 a, const npyv_u8x3 divisor)
 {
     const npyv_u8 mergeo_perm = {

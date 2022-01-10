@@ -48,6 +48,19 @@ NPY_FINLINE npyv_u32x2 npyv_expand_u32_u16(npyv_u16 data)
     return r;
 }
 
+NPY_FINLINE npyv_u32x4 npyv_expand_u32_u8(npyv_u8 data)
+{
+    npyv_u32x4 r;
+    npyv_u16x2 t = npyv_expand_u16_u8(data);
+    npyv_u32x2 thi = npyv_expand_u32_u16(t.val[0]);
+    npyv_u32x2 tlo = npyv_expand_u32_u16(t.val[1]);
+    r.val[0] = thi.val[0];
+    r.val[1] = thi.val[1];
+    r.val[2] = tlo.val[0];
+    r.val[3] = tlo.val[1];
+    return r;
+}
+
 // convert boolean vector to integer bitfield
 NPY_FINLINE npy_uint64 npyv_tobits_b8(npyv_b8 a)
 {
