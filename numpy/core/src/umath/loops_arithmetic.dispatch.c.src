@@ -179,7 +179,7 @@ vsx4_simd_divide_by_scalar1_contig_@sfx@(char **args, npy_intp len)
         npyv_@sfx@ b = npyv_load_@sfx@(src);
         npyv_@sfx@ c = vsx4_div_@sfx@(a, b);
         npyv_store_@sfx@(dst, c);
-				check_div_by_zero_@sfx@(b, zero);
+        check_div_by_zero_@sfx@(b, zero);
     }
 
     for (; len > 0; --len, ++src, ++dst) {
@@ -238,7 +238,7 @@ vsx4_simd_divide_contig_@sfx@(char **args, npy_intp len)
         npyv_@sfx@ b = npyv_load_@sfx@(src2);
         npyv_@sfx@ c = vsx4_div_@sfx@(a, b);
         npyv_store_@sfx@(dst, c);
-				check_div_by_zero_@sfx@(b, zero);
+        check_div_by_zero_@sfx@(b, zero);
     }
 
     for (; len > 0; --len, ++src1, ++src2, ++dst) {
