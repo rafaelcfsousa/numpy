@@ -102,11 +102,10 @@ simd_divide_by_scalar_contig_@sfx@(char **args, npy_intp len)
 /**end repeat**/
 
 #if defined(NPY_HAVE_VSX4)
-typedef struct { npyv_u32 val[4]; } npyv_u32x4;
-
-NPY_FINLINE npyv_u32x4 vsx4_expand_u32_u8(npyv_u8 data)
+typedef struct { npyv_u32 val[4]; } vsx4_u32x4;
+NPY_FINLINE vsx4_u32x4 vsx4_expand_u32_u8(npyv_u8 data)
 {
-    npyv_u32x4 r;
+    vsx4_u32x4 r;
     npyv_u16x2 t = npyv_expand_u16_u8(data);
     npyv_u32x2 thi = npyv_expand_u32_u16(t.val[0]);
     npyv_u32x2 tlo = npyv_expand_u32_u16(t.val[1]);
@@ -119,32 +118,32 @@ NPY_FINLINE npyv_u32x4 vsx4_expand_u32_u8(npyv_u8 data)
 
 NPY_FINLINE npyv_u8 vsx4_div_u8(npyv_u8 a, npyv_u8 b)
 {
-		const npyv_u8 mask = {
-				0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30
-		};
-		npyv_u32x4 a_expand = vsx4_expand_u32_u8(a);
-		npyv_u32x4 b_expand = vsx4_expand_u32_u8(b);
-		npyv_u32 divhi1 = vec_div(a_expand.val[0], b_expand.val[0]);
-		npyv_u32 divlo1 = vec_div(a_expand.val[1], b_expand.val[1]);
-		npyv_u32 divhi2 = vec_div(a_expand.val[2], b_expand.val[2]);
-		npyv_u32 divlo2 = vec_div(a_expand.val[3], b_expand.val[3]);
-		npyv_u16 hi = (npyv_u16)vec_perm(divhi1, divlo1, mask);
-		npyv_u16 lo = (npyv_u16)vec_perm(divhi2, divlo2, mask);
-		npyv_u8 res = (npyv_u8)vec_perm(hi, lo, mask);
-		return res;
+    const npyv_u8 mask = {
+        0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30
+    };
+    vsx4_u32x4 a_expand = vsx4_expand_u32_u8(a);
+    vsx4_u32x4 b_expand = vsx4_expand_u32_u8(b);
+    npyv_u32 divhi1 = vec_div(a_expand.val[0], b_expand.val[0]);
+    npyv_u32 divlo1 = vec_div(a_expand.val[1], b_expand.val[1]);
+    npyv_u32 divhi2 = vec_div(a_expand.val[2], b_expand.val[2]);
+    npyv_u32 divlo2 = vec_div(a_expand.val[3], b_expand.val[3]);
+    npyv_u16 hi = (npyv_u16)vec_perm(divhi1, divlo1, mask);
+    npyv_u16 lo = (npyv_u16)vec_perm(divhi2, divlo2, mask);
+    npyv_u8 res = (npyv_u8)vec_perm(hi, lo, mask);
+    return res;
 }
 
 NPY_FINLINE npyv_u16 vsx4_div_u16(npyv_u16 a, npyv_u16 b)
 {
-		const npyv_u8 mask = {
-			0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 24, 25, 28, 29
-		};
-		npyv_u32x2 a_expand = npyv_expand_u32_u16(a);
-		npyv_u32x2 b_expand = npyv_expand_u32_u16(b);
-		npyv_u32 divhi = vec_div(a_expand.val[0], b_expand.val[0]);
-		npyv_u32 divlo = vec_div(a_expand.val[1], b_expand.val[1]);
-		npyv_u16 res = (npyv_u16)vec_perm(divhi, divlo, mask);
-		return res;
+    const npyv_u8 mask = {
+        0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 24, 25, 28, 29
+    };
+    npyv_u32x2 a_expand = npyv_expand_u32_u16(a);
+    npyv_u32x2 b_expand = npyv_expand_u32_u16(b);
+    npyv_u32 divhi = vec_div(a_expand.val[0], b_expand.val[0]);
+    npyv_u32 divlo = vec_div(a_expand.val[1], b_expand.val[1]);
+    npyv_u16 res = (npyv_u16)vec_perm(divhi, divlo, mask);
+    return res;
 }
 
 #define vsx4_div_u32 vec_div
@@ -160,10 +159,10 @@ NPY_FINLINE npyv_u16 vsx4_div_u16(npyv_u16 a, npyv_u16 b)
 #if defined(NPY_HAVE_VSX4)
 static NPY_INLINE void
 check_div_by_zero_@sfx@(npyv_@sfx@ b, npyv_@sfx@ zero) {
-		int has_zero = vec_any_eq(b, zero);
-		if (has_zero) {
-				npy_set_floatstatus_divbyzero();
-		}
+    int has_zero = vec_any_eq(b, zero);
+    if (has_zero) {
+      npy_set_floatstatus_divbyzero();
+    }
 }
 
 static NPY_INLINE void
