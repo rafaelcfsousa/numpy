@@ -101,12 +101,71 @@ simd_divide_by_scalar_contig_@sfx@(char **args, npy_intp len)
 }
 /**end repeat**/
 
+#if defined(NPY_HAVE_VSX4)
+typedef struct { npyv_u32 val[4]; } npyv_u32x4;
+
+NPY_FINLINE npyv_u32x4 vsx4_expand_u32_u8(npyv_u8 data)
+{
+    npyv_u32x4 r;
+    npyv_u16x2 t = npyv_expand_u16_u8(data);
+    npyv_u32x2 thi = npyv_expand_u32_u16(t.val[0]);
+    npyv_u32x2 tlo = npyv_expand_u32_u16(t.val[1]);
+    r.val[0] = thi.val[0];
+    r.val[1] = thi.val[1];
+    r.val[2] = tlo.val[0];
+    r.val[3] = tlo.val[1];
+    return r;
+}
+
+NPY_FINLINE npyv_u8 vsx4_div_u8(npyv_u8 a, npyv_u8 b)
+{
+		const npyv_u8 mask = {
+				0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30
+		};
+		npyv_u32x4 a_expand = vsx4_expand_u32_u8(a);
+		npyv_u32x4 b_expand = vsx4_expand_u32_u8(b);
+		npyv_u32 divhi1 = vec_div(a_expand.val[0], b_expand.val[0]);
+		npyv_u32 divlo1 = vec_div(a_expand.val[1], b_expand.val[1]);
+		npyv_u32 divhi2 = vec_div(a_expand.val[2], b_expand.val[2]);
+		npyv_u32 divlo2 = vec_div(a_expand.val[3], b_expand.val[3]);
+		npyv_u16 hi = (npyv_u16)vec_perm(divhi1, divlo1, mask);
+		npyv_u16 lo = (npyv_u16)vec_perm(divhi2, divlo2, mask);
+		npyv_u8 res = (npyv_u8)vec_perm(hi, lo, mask);
+		return res;
+}
+
+NPY_FINLINE npyv_u16 vsx4_div_u16(npyv_u16 a, npyv_u16 b)
+{
+		const npyv_u8 mask = {
+			0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 24, 25, 28, 29
+		};
+		npyv_u32x2 a_expand = npyv_expand_u32_u16(a);
+		npyv_u32x2 b_expand = npyv_expand_u32_u16(b);
+		npyv_u32 divhi = vec_div(a_expand.val[0], b_expand.val[0]);
+		npyv_u32 divlo = vec_div(a_expand.val[1], b_expand.val[1]);
+		npyv_u16 res = (npyv_u16)vec_perm(divhi, divlo, mask);
+		return res;
+}
+
+#define vsx4_div_u32 vec_div
+#define vsx4_div_u64 vec_div
+
+#endif
+
 /**begin repeat
  * Unsigned types
  * #sfx    = u8, u16, u32, u64#
  * #len    = 8,  16,  32,  64#
  */
 #if defined(NPY_HAVE_VSX4)
+static NPY_INLINE void
+check_div_by_zero_@sfx@(npyv_@sfx@ b, npyv_@sfx@ zero) {
+		int has_zero = vec_any_eq(b, zero);
+		if (has_zero) {
+				npy_set_floatstatus_divbyzero();
+		}
+}
+
 static NPY_INLINE void
 vsx4_simd_divide_by_scalar1_contig_@sfx@(char **args, npy_intp len)
 {
@@ -119,12 +178,9 @@ vsx4_simd_divide_by_scalar1_contig_@sfx@(char **args, npy_intp len)
 
     for (; len >= vstep; len -= vstep, src += vstep, dst += vstep) {
         npyv_@sfx@ b = npyv_load_@sfx@(src);
-        npyv_@sfx@ c = npyv_div_@sfx@(a, b);
+        npyv_@sfx@ c = vsx4_div_@sfx@(a, b);
         npyv_store_@sfx@(dst, c);
-        int err = vec_any_eq(b, zero);
-        if (err == 1) {
-            npy_set_floatstatus_divbyzero();
-        }
+				check_div_by_zero_@sfx@(b, zero);
     }
 
     for (; len > 0; --len, ++src, ++dst) {
@@ -154,7 +210,7 @@ vsx4_simd_divide_by_scalar2_contig_@sfx@(char **args, npy_intp len)
 
     for (; len >= vstep; len -= vstep, src += vstep, dst += vstep) {
         npyv_@sfx@ a = npyv_load_@sfx@(src);
-        npyv_@sfx@ c = npyv_div_@sfx@(a, b);
+        npyv_@sfx@ c = vsx4_div_@sfx@(a, b);
         npyv_store_@sfx@(dst, c);
     }
 
@@ -181,12 +237,9 @@ vsx4_simd_divide_contig_@sfx@(char **args, npy_intp len)
     for (; len >= vstep; len -= vstep, src1 += vstep, src2 += vstep, dst += vstep) {
         npyv_@sfx@ a = npyv_load_@sfx@(src1);
         npyv_@sfx@ b = npyv_load_@sfx@(src2);
-        npyv_@sfx@ c = npyv_div_@sfx@(a, b);
+        npyv_@sfx@ c = vsx4_div_@sfx@(a, b);
         npyv_store_@sfx@(dst, c);
-        int err = vec_any_eq(b, zero);
-        if (err == 1) {
-            npy_set_floatstatus_divbyzero();
-        }
+				check_div_by_zero_@sfx@(b, zero);
     }
 
     for (; len > 0; --len, ++src1, ++src2, ++dst) {
