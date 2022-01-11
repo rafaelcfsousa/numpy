@@ -28,6 +28,9 @@
 #undef __AVX512F__
 #endif
 #endif
+#ifdef NPY_HAVE_VSX_INTRINSICS
+#include <altivec.h>
+#endif
 #include "loops_utils.h" // nomemoverlap
 #include <assert.h>
 #include <stdlib.h>
@@ -380,6 +383,66 @@ run_unary_simd_@kind@_BOOL(char **args, npy_intp const *dimensions, npy_intp con
     return 0;
 }
 
+/**end repeat**/
+
+/*
+ *****************************************************************************
+ **                           INTEGER DISPATCHERS
+ *****************************************************************************
+ */
+
+/**begin repeat
+ * #TYPE = UBYTE, USHORT, UINT, ULONG, ULONGLONG#
+ * #type = npy_ubyte, npy_ushort, npy_uint, npy_ulong, npy_ulonglong#
+ * #vector = 0, 0, 1, 0, 1#
+ */
+
+/**begin repeat1
+ *  #kind = remainder#
+ */
+
+#if @vector@ && defined NPY_HAVE_VSX4_INTRINSICS
+
+/* prototypes */
+static void
+vsx4_binary_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2,
+                          npy_intp n);
+static void
+vsx4_binary_scalar1_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2,
+                                  npy_intp n);
+static void
+vsx4_binary_scalar2_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2,
+                                  npy_intp n);
+
+#endif
+
+static NPY_INLINE int
+run_binary_simd_@kind@_@TYPE@(char **args, npy_intp const *dimensions, npy_intp const *steps)
+{
+#if @vector@ && defined NPY_HAVE_VSX4_INTRINSICS
+    @type@ * ip1 = (@type@ *)args[0];
+    @type@ * ip2 = (@type@ *)args[1];
+    @type@ * op = (@type@ *)args[2];
+    npy_intp n = dimensions[0];
+    /* argument one scalar */
+    if (IS_BLOCKABLE_BINARY_SCALAR1(sizeof(@type@), VECTOR_SIZE_BYTES)) {
+        vsx4_binary_scalar1_@kind@_@TYPE@(op, ip1, ip2, n);
+        return 1;
+    }
+    /* argument two scalar */
+    else if (IS_BLOCKABLE_BINARY_SCALAR2(sizeof(@type@), VECTOR_SIZE_BYTES)) {
+        vsx4_binary_scalar2_@kind@_@TYPE@(op, ip1, ip2, n);
+        return 1;
+    }
+    else if (IS_BLOCKABLE_BINARY(sizeof(@type@), VECTOR_SIZE_BYTES)) {
+        vsx4_binary_@kind@_@TYPE@(op, ip1, ip2, n);
+        return 1;
+    }
+#endif
+    return 0;
+}
+
+/**end repeat1**/
 /**end repeat**/
 
 #ifdef NPY_HAVE_SSE2_INTRINSICS
@@ -1715,5 +1778,123 @@ sse2_@kind@_BOOL(@type@ * op, @type@ * ip, const npy_intp n)
 /**end repeat**/
 
 #undef VECTOR_SIZE_BYTES
-#endif  /* NPY_HAVE_SSE2_INTRINSICS */
+#elif defined NPY_HAVE_VSX_INTRINSICS
+
+/*
+ *****************************************************************************
+ **                           INTEGER LOOPS
+ *****************************************************************************
+ */
+
+#if defined HAVE_ATTRIBUTE_TARGET_VSX4_WITH_INTRINSICS && defined NPY_HAVE_VSX4_INTRINSICS
+
+static __vector npy_uint NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
+vsx4_modulo_UINT (__vector npy_uint a, __vector npy_uint b) {
+    return __builtin_vec_mod(a, b);   
+}
+
+static __vector npy_ulonglong NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
+vsx4_modulo_ULONGLONG (__vector npy_ulonglong a, __vector npy_ulonglong b) {
+    return __builtin_vec_mod(a, b);   
+}
+
+/**begin repeat
+ * #TYPE = UINT, ULONGLONG#
+ * #type = npy_uint, npy_ulonglong#
+*/
+
+static void NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
+check_div_by_zero_@TYPE@(__vector @type@ b, __vector @type@ zero) {
+    int has_zero = __builtin_vec_vcmpae_p(b, zero);
+    if (has_zero) {
+        npy_set_floatstatus_divbyzero();
+    }
+}
+
+/**begin repeat1
+ * #kind = remainder#
+*/
+
+static void NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
+vsx4_binary_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
+{
+    const __vector @type@ zero = {0};
+    LOOP_BLOCK_ALIGN_VAR(ip1, @type@, VECTOR_SIZE_BYTES) {
+        if (ip2[i] == 0) {
+            npy_set_floatstatus_divbyzero();
+            op[i] = 0;
+        } else {
+            op[i] = ip1[i] % ip2[i];
+        }
+    }
+    LOOP_BLOCKED(@type@, VECTOR_SIZE_BYTES) {
+        __vector @type@ a = __builtin_vec_vsx_ld(0, &ip1[i]);
+        __vector @type@ b = __builtin_vec_vsx_ld(0, &ip2[i]);
+        __vector @type@ res = __builtin_vec_mod(a, b);
+        __builtin_vec_vsx_st(res, 0, &op[i]);
+        check_div_by_zero_@TYPE@(b, zero);
+    }
+    LOOP_BLOCKED_END {
+        if (ip2[i] == 0) {
+            npy_set_floatstatus_divbyzero();
+            op[i] = 0;
+        } else {
+            op[i] = ip1[i] % ip2[i];
+        }
+    }
+}
+
+
+static void NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
+vsx4_binary_scalar1_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
+{
+    LOOP_BLOCK_ALIGN_VAR(ip2, @type@, VECTOR_SIZE_BYTES) {
+        if (ip2[i] == 0) {
+            npy_set_floatstatus_divbyzero();
+            op[i] = 0;
+        } else {
+            op[i] = ip1[0] % ip2[i];
+        }
+    }
+    LOOP_BLOCKED(@type@, VECTOR_SIZE_BYTES) {
+    }
+    LOOP_BLOCKED_END {
+        if (ip2[i] == 0) {
+            npy_set_floatstatus_divbyzero();
+            op[i] = 0;
+        } else {
+            op[i] = ip1[0] % ip2[i];
+        }
+    }
+}
+
+static void NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
+vsx4_binary_scalar2_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
+{
+    LOOP_BLOCK_ALIGN_VAR(ip1, @type@, VECTOR_SIZE_BYTES) {
+        if (ip2[0] == 0) {
+            npy_set_floatstatus_divbyzero();
+            op[i] = 0;
+        } else {
+            op[i] = ip1[i] % ip2[0];
+        }
+    }
+    LOOP_BLOCKED(@type@, VECTOR_SIZE_BYTES) {
+    }
+    LOOP_BLOCKED_END {
+        if (ip2[0] == 0) {
+            npy_set_floatstatus_divbyzero();
+            op[i] = 0;
+        } else {
+            op[i] = ip1[i] % ip2[0];
+        }
+    }
+}
+/**end repeat1**/
+/**end repeat**/
+#endif
+
+#undef VECTOR_SIZE_BYTES
+#endif  /* NPY_HAVE_VSX_INTRINSICS */
+
 #endif
