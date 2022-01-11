@@ -121,6 +121,7 @@ OPTIONAL_HEADERS = [
                 "xmmintrin.h",  # SSE
                 "emmintrin.h",  # SSE2
                 "immintrin.h",  # AVX
+                "altivec.h", # VSX
                 "features.h",  # for glibc version linux
                 "xlocale.h",  # see GH#8367
                 "dlfcn.h", # dladdr
@@ -156,6 +157,9 @@ OPTIONAL_INTRINSICS = [("__builtin_isnan", '5.'),
                                              "vpbroadcastmb2q %k0, %xmm0\\n"',
                         "stdio.h", "LINK_AVX512_SKX"),
                        ("__asm__ volatile", '"xgetbv"', "stdio.h", "XGETBV"),
+                       # check that the linker can handle vsx
+                       ("__asm__ volatile", '"vaddubm 0, 1, 2"', "stdio.h", "LINK_VSX"),
+                       ("__asm__ volatile", '"vmoduw 0, 1, 2"', "stdio.h", "LINK_VSX4"),
                        ]
 
 # function attributes
@@ -175,6 +179,12 @@ OPTIONAL_FUNCTION_ATTRIBUTES = [('__attribute__((optimize("unroll-loops")))',
                                  'attribute_target_avx512f'),
                                 ('__attribute__((target ("avx512f,avx512dq,avx512bw,avx512vl,avx512cd")))',
                                  'attribute_target_avx512_skx'),
+                                ('__attribute__((target ("cpu=power8")))',
+                                  'attribute_target_vsx2'),
+                                ('__attribute__((target ("cpu=power9")))',
+                                  'attribute_target_vsx3'),
+                                ('__attribute__((target ("cpu=power10")))',
+                                  'attribute_target_vsx4'),
                                 ]
 
 # function attributes with intrinsics
@@ -201,6 +211,14 @@ OPTIONAL_FUNCTION_ATTRIBUTES_WITH_INTRINSICS = [('__attribute__((target("avx2,fm
                                     _mm512_castps_si512(_mm512_set1_ps(1.0));\
                                 _mm_mask_storeu_epi8(NULL, 0xFF, _mm_broadcastmb_epi64(temp))',
                                 'immintrin.h'),
+                                ('__attribute__((target ("cpu=power8")))',
+                                'attribute_target_vsx_with_intrinsics',
+                                '__vector int v1, v2, v3; v3 = __builtin_vec_add(v1, v2);',
+                                'altivec.h'),
+                                ('__attribute__((target ("cpu=power10")))',
+                                'attribute_target_vsx4_with_intrinsics',
+                                '__vector int v1, v2, v3; v3 = __builtin_vec_mod(v1, v2);',
+                                'altivec.h'),
                                 ]
 
 # variable attributes tested via "int %s a" % attribute
