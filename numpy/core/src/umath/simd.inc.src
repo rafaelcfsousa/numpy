@@ -394,7 +394,7 @@ run_unary_simd_@kind@_BOOL(char **args, npy_intp const *dimensions, npy_intp con
 /**begin repeat
  * #TYPE = UBYTE, USHORT, UINT, ULONG, ULONGLONG#
  * #type = npy_ubyte, npy_ushort, npy_uint, npy_ulong, npy_ulonglong#
- * #vector = 0, 0, 1, 0, 1#
+ * #vector = 0, 1, 1, 0, 1#
  */
 
 /**begin repeat1
@@ -1788,6 +1788,27 @@ sse2_@kind@_BOOL(@type@ * op, @type@ * ip, const npy_intp n)
 
 #if defined HAVE_ATTRIBUTE_TARGET_VSX4_WITH_INTRINSICS && defined NPY_HAVE_VSX4_INTRINSICS
 
+static __vector npy_ubyte NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
+vsx4_modulo_UBYTE(__vector npy_ubyte a, __vector npy_ubyte b) {
+}
+
+static __vector npy_ushort NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
+vsx4_modulo_USHORT(__vector npy_ushort a, __vector npy_ushort b) {
+    const __vector unsigned char mask = {
+        0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 24, 25, 28, 29
+    };
+    __vector unsigned short zero = (__vector unsigned short)__builtin_vec_splats(0);
+    __vector unsigned int ahi = (__vector unsigned int)__builtin_vec_mergeh(a, zero);
+    __vector unsigned int alo = (__vector unsigned int)__builtin_vec_mergel(a, zero);
+    __vector unsigned int bhi = (__vector unsigned int)__builtin_vec_mergeh(b, zero);
+    __vector unsigned int blo = (__vector unsigned int)__builtin_vec_mergel(b, zero);
+    __vector unsigned int modulohi = __builtin_vec_mod(ahi, bhi);
+    __vector unsigned int modulolo = __builtin_vec_mod(alo, blo);
+    __vector unsigned short res =
+        (__vector unsigned short)__builtin_vec_perm(modulohi, modulolo, mask);
+    return res;
+}
+
 static __vector npy_uint NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
 vsx4_modulo_UINT(__vector npy_uint a, __vector npy_uint b) {
     return __builtin_vec_mod(a, b);   
@@ -1799,12 +1820,12 @@ vsx4_modulo_ULONGLONG(__vector npy_ulonglong a, __vector npy_ulonglong b) {
 }
 
 /**begin repeat
- * #TYPE = UINT, ULONGLONG#
- * #type = npy_uint, npy_ulonglong#
+ * #TYPE = USHORT, UINT, ULONGLONG#
+ * #type = npy_ushort, npy_uint, npy_ulonglong#
 */
 
 static void NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
-check_div_by_zero_@TYPE@(__vector @type@ b, __vector @type@ zero) {
+check_div_by_zero_@TYPE@(__vector @type@ b, const __vector @type@ zero) {
     int has_zero = __builtin_vec_vcmpae_p(b, zero);
     if (has_zero) {
         npy_set_floatstatus_divbyzero();
@@ -1818,7 +1839,7 @@ check_div_by_zero_@TYPE@(__vector @type@ b, __vector @type@ zero) {
 static void NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
 vsx4_binary_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
 {
-    __vector @type@ zero = (__vector @type@)__builtin_vec_splats(0);
+    const __vector @type@ zero = (__vector @type@)__builtin_vec_splats(0);
     LOOP_BLOCK_ALIGN_VAR(ip1, @type@, VECTOR_SIZE_BYTES) {
         if (ip2[i] == 0) {
             npy_set_floatstatus_divbyzero();
@@ -1848,7 +1869,7 @@ vsx4_binary_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
 static void NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
 vsx4_binary_scalar1_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
 {
-    __vector @type@ zero = (__vector @type@)__builtin_vec_splats(0);
+    const __vector @type@ zero = (__vector @type@)__builtin_vec_splats(0);
     __vector @type@ a = (__vector @type@)__builtin_vec_splats(ip1[0]);
     LOOP_BLOCK_ALIGN_VAR(ip2, @type@, VECTOR_SIZE_BYTES) {
         if (ip2[i] == 0) {
@@ -1878,7 +1899,6 @@ static void NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
 vsx4_binary_scalar2_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
 {
     __vector @type@ b = (__vector @type@)__builtin_vec_splats(ip2[0]);
-    __vector @type@ zero = (__vector @type@)__builtin_vec_splats(0);
     if (ip2[0] == 0) {
         npy_set_floatstatus_divbyzero();
     }
