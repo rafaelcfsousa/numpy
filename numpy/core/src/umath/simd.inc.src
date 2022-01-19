@@ -394,14 +394,13 @@ run_unary_simd_@kind@_BOOL(char **args, npy_intp const *dimensions, npy_intp con
 /**begin repeat
  * #TYPE = UBYTE, USHORT, UINT, ULONG, ULONGLONG#
  * #type = npy_ubyte, npy_ushort, npy_uint, npy_ulong, npy_ulonglong#
- * #vector = 1, 1, 1, 0, 1#
  */
 
 /**begin repeat1
  *  #kind = remainder#
  */
 
-#if @vector@ && defined NPY_HAVE_VSX4_INTRINSICS
+#if defined NPY_HAVE_VSX4_INTRINSICS
 
 /* prototypes */
 static void
@@ -419,7 +418,7 @@ vsx4_binary_scalar2_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2,
 static NPY_INLINE int
 run_binary_simd_@kind@_@TYPE@(char **args, npy_intp const *dimensions, npy_intp const *steps)
 {
-#if @vector@ && defined NPY_HAVE_VSX4_INTRINSICS
+#if defined NPY_HAVE_VSX4_INTRINSICS
     @type@ * ip1 = (@type@ *)args[0];
     @type@ * ip2 = (@type@ *)args[1];
     @type@ * op = (@type@ *)args[2];
@@ -1859,18 +1858,24 @@ vsx4_modulo_UINT(__vector unsigned int a, __vector unsigned int b) {
 }
 
 static __vector unsigned long long NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
+vsx4_modulo_ULONG(__vector unsigned long long a, __vector unsigned long long b) {
+    return __builtin_vec_mod(a, b);
+}
+
+static __vector unsigned long long NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
 vsx4_modulo_ULONGLONG(__vector unsigned long long a, __vector unsigned long long b) {
     return __builtin_vec_mod(a, b);   
 }
 
 /**begin repeat
- * #TYPE = UBYTE, USHORT, UINT, ULONGLONG#
- * #type = npy_ubyte, npy_ushort, npy_uint, npy_ulonglong#
+ * #TYPE = UBYTE, USHORT, UINT, ULONG, ULONGLONG#
+ * #type = npy_ubyte, npy_ushort, npy_uint, npy_ulong, npy_ulonglong#
+ * #tcast = npy_ubyte, npy_ushort, npy_uint, npy_ulonglong, npy_ulonglong#
 */
 
 static void NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
-check_div_by_zero_@TYPE@(__vector @type@ b) {
-    const __vector @type@ zero = (__vector @type@)__builtin_vec_splats(0);
+check_div_by_zero_@TYPE@(__vector @tcast@ b) {
+    const __vector @tcast@ zero = (__vector @tcast@)__builtin_vec_splats(0);
     int has_zero = __builtin_vec_vcmpae_p(b, zero);
     if (has_zero) {
         npy_set_floatstatus_divbyzero();
@@ -1893,10 +1898,10 @@ vsx4_binary_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
         }
     }
     LOOP_BLOCKED(@type@, VECTOR_SIZE_BYTES) {
-        __vector @type@ a = __builtin_vec_vsx_ld(0, &ip1[i]);
-        __vector @type@ b = __builtin_vec_vsx_ld(0, &ip2[i]);
-        __vector @type@ res = vsx4_modulo_@TYPE@(a, b);
-        __builtin_vec_vsx_st(res, 0, &op[i]);
+        __vector @tcast@ a = (__vector @tcast@)__builtin_vec_vsx_ld(0, (@tcast@ *)&ip1[i]);
+        __vector @tcast@ b = (__vector @tcast@)__builtin_vec_vsx_ld(0, (@tcast@ *)&ip2[i]);
+        __vector @tcast@ res = vsx4_modulo_@TYPE@(a, b);
+        __builtin_vec_vsx_st(res, 0, (@tcast@ *)&op[i]);
         check_div_by_zero_@TYPE@(b);
     }
     LOOP_BLOCKED_END {
@@ -1908,7 +1913,6 @@ vsx4_binary_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
         }
     }
 }
-
 
 static void NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
 vsx4_binary_scalar1_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
@@ -1923,9 +1927,9 @@ vsx4_binary_scalar1_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_i
         }
     }
     LOOP_BLOCKED(@type@, VECTOR_SIZE_BYTES) {
-        __vector @type@ b = __builtin_vec_vsx_ld(0, &ip2[i]);
-        __vector @type@ res = vsx4_modulo_@TYPE@(a, b);
-        __builtin_vec_vsx_st(res, 0, &op[i]);
+        __vector @tcast@ b = (__vector @tcast@)__builtin_vec_vsx_ld(0, (@tcast@ *)&ip2[i]);
+        __vector @tcast@ res = vsx4_modulo_@TYPE@(a, b);
+        __builtin_vec_vsx_st(res, 0, (@tcast@ *)&op[i]);
         check_div_by_zero_@TYPE@(b);
     }
     LOOP_BLOCKED_END {
@@ -1949,9 +1953,9 @@ vsx4_binary_scalar2_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_i
         op[i] = (ip2[0] == 0) ? 0 : ip1[i] % ip2[0];
     }
     LOOP_BLOCKED(@type@, VECTOR_SIZE_BYTES) {
-        __vector @type@ a = __builtin_vec_vsx_ld(0, &ip1[i]);
-        __vector @type@ res = vsx4_modulo_@TYPE@(a, b);
-        __builtin_vec_vsx_st(res, 0, &op[i]);
+        __vector @tcast@ a = (__vector @tcast@)__builtin_vec_vsx_ld(0, (@tcast@ *)&ip1[i]);
+        __vector @tcast@ res = vsx4_modulo_@TYPE@(a, b);
+        __builtin_vec_vsx_st(res, 0, (@tcast@ *)&op[i]);
     }
     LOOP_BLOCKED_END {
         op[i] = (ip2[0] == 0) ? 0 : ip1[i] % ip2[0];
