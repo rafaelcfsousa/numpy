@@ -1824,31 +1824,25 @@ vsx_expand_u32_u8(__vector unsigned char data) {
 
 static __vector unsigned char NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
 vsx4_modulo_UBYTE(__vector unsigned char a, __vector unsigned char b) {
-    const __vector unsigned char mask = {
-        0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30
-    };
     vsx_u32x4 a_expand = vsx_expand_u32_u8(a);
     vsx_u32x4 b_expand = vsx_expand_u32_u8(b);
     __vector unsigned int modhi1 = __builtin_vec_mod(a_expand.val[0], b_expand.val[0]);
     __vector unsigned int modlo1 = __builtin_vec_mod(a_expand.val[1], b_expand.val[1]);
     __vector unsigned int modhi2 = __builtin_vec_mod(a_expand.val[2], b_expand.val[2]);
     __vector unsigned int modlo2 = __builtin_vec_mod(a_expand.val[3], b_expand.val[3]);
-    __vector unsigned short hi = (__vector unsigned short)__builtin_vec_perm(modhi1, modlo1, mask);
-    __vector unsigned short lo = (__vector unsigned short)__builtin_vec_perm(modhi2, modlo2, mask);
-    __vector unsigned char res = (__vector unsigned char)__builtin_vec_perm(hi, lo, mask);
+    __vector unsigned short hi = (__vector unsigned short)__builtin_vec_pack(modhi1, modlo1);
+    __vector unsigned short lo = (__vector unsigned short)__builtin_vec_pack(modhi2, modlo2);
+    __vector unsigned char res = (__vector unsigned char)__builtin_vec_pack(hi, lo);
     return res;
 }
 
 static __vector unsigned short NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
 vsx4_modulo_USHORT(__vector unsigned short a, __vector unsigned short b) {
-    const __vector unsigned char mask = {
-        0, 1, 4, 5, 8, 9, 12, 13, 16, 17, 20, 21, 24, 25, 28, 29
-    };
     vsx_u32x2 a_expand = vsx_expand_u32_u16(a);
     vsx_u32x2 b_expand = vsx_expand_u32_u16(b);
     __vector unsigned int modulohi = __builtin_vec_mod(a_expand.val[0], b_expand.val[0]);
     __vector unsigned int modulolo = __builtin_vec_mod(a_expand.val[1], b_expand.val[1]);
-    __vector unsigned short res = (__vector unsigned short)__builtin_vec_perm(modulohi, modulolo, mask);
+    __vector unsigned short res = (__vector unsigned short)__builtin_vec_pack(modulohi, modulolo);
     return res;
 }
 
