@@ -1883,9 +1883,11 @@ check_div_by_zero_@TYPE@(__vector @tcast@ b) {
 static void NPY_GCC_OPT_3 NPY_INLINE NPY_GCC_TARGET_VSX4
 vsx4_binary_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
 {
+    const __vector @tcast@ zero = (__vector @tcast@)__builtin_vec_splats(0);
+    int has_zero = 0;
     LOOP_BLOCK_ALIGN_VAR(ip1, @type@, VECTOR_SIZE_BYTES) {
         if (ip2[i] == 0) {
-            npy_set_floatstatus_divbyzero();
+            has_zero = 1;
             op[i] = 0;
         } else {
             op[i] = ip1[i] % ip2[i];
@@ -1896,15 +1898,18 @@ vsx4_binary_@kind@_@TYPE@(@type@ * op, @type@ * ip1, @type@ * ip2, npy_intp n)
         __vector @tcast@ b = (__vector @tcast@)__builtin_vec_vsx_ld(0, (@tcast@ *)&ip2[i]);
         __vector @tcast@ res = vsx4_modulo_@TYPE@(a, b);
         __builtin_vec_vsx_st(res, 0, (@tcast@ *)&op[i]);
-        check_div_by_zero_@TYPE@(b);
+        has_zero |= __builtin_vec_vcmpae_p(b, zero);
     }
     LOOP_BLOCKED_END {
         if (ip2[i] == 0) {
-            npy_set_floatstatus_divbyzero();
+            has_zero = 1;
             op[i] = 0;
         } else {
             op[i] = ip1[i] % ip2[i];
         }
+    }
+    if (has_zero) {
+        npy_set_floatstatus_divbyzero();
     }
 }
 
