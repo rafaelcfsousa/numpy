@@ -150,6 +150,34 @@ class CustomScalarFloorDivideInt(Benchmark):
     def time_floor_divide_int(self, dtype, divisor):
         self.x // divisor
 
+class CustomScalarModuloInt(Benchmark):
+    params = (np.sctypes['int'] + np.sctypes['uint'], [8, 11])
+    param_names = ['dtype', 'divisors']
+
+    def setup(self, dtype, divisor):
+        if dtype in np.sctypes['uint'] and divisor < 0:
+            raise NotImplementedError(
+                    "Skipping test for negative divisor with unsigned type")
+
+        iinfo = np.iinfo(dtype)
+        self.x = np.random.randint(
+                    iinfo.min, iinfo.max, size=1000000, dtype=dtype)
+
+    def time_modulo_int(self, dtype, divisor):
+        self.x % divisor
+
+class CustomArrayModuloInt(Benchmark):
+    params = (np.sctypes['int'] + np.sctypes['uint'], [100, 10000, 1000000])
+    param_names = ['dtype', 'size']
+
+    def setup(self, dtype, size):
+        iinfo = np.iinfo(dtype)
+        self.x = np.random.randint(
+                    iinfo.min, iinfo.max, size=size, dtype=dtype)
+        self.y = np.random.randint(1, iinfo.max, size=size, dtype=dtype)
+
+    def time_modulo_int(self, dtype, size):
+        self.x % self.y
 
 class Scalar(Benchmark):
     def setup(self):
