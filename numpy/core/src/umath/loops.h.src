@@ -62,6 +62,15 @@ BOOL_@kind@(char **args, npy_intp const *dimensions, npy_intp const *steps, void
  */
  NPY_CPU_DISPATCH_DECLARE(NPY_NO_EXPORT void @TYPE@_divide,
      (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func)))
+
+ NPY_CPU_DISPATCH_DECLARE(NPY_NO_EXPORT void @TYPE@_fmod,
+     (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func)))
+
+ NPY_CPU_DISPATCH_DECLARE(NPY_NO_EXPORT void @TYPE@_remainder,
+     (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func)))
+
+ NPY_CPU_DISPATCH_DECLARE(NPY_NO_EXPORT void @TYPE@_divmod,
+     (char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func)))
 /**end repeat**/
 
 /**begin repeat
@@ -143,19 +152,10 @@ NPY_NO_EXPORT void
 @S@@TYPE@_power(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func));
 
 NPY_NO_EXPORT void
-@S@@TYPE@_fmod(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func));
-
-NPY_NO_EXPORT void
 @S@@TYPE@_absolute(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func));
 
 NPY_NO_EXPORT void
 @S@@TYPE@_sign(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func));
-
-NPY_NO_EXPORT void
-@S@@TYPE@_remainder(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func));
-
-NPY_NO_EXPORT void
-@S@@TYPE@_divmod(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func));
 
 NPY_NO_EXPORT void
 @S@@TYPE@_gcd(char **args, npy_intp const *dimensions, npy_intp const *steps, void *NPY_UNUSED(func));
