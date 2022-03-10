@@ -72,7 +72,7 @@ simd_divide_by_scalar_contig_@sfx@(char **args, npy_intp len)
             }
         }
         if (raise_err) {
-            npy_set_floatstatus_divbyzero();
+
         }
     } else {
         for (; len >= vstep; len -= vstep, src += vstep, dst += vstep) {
@@ -324,14 +324,14 @@ vsx4_simd_@func@_contig_@sfx@(char **args, npy_intp len)
     }
 
     if (!vec_all_eq(warn, vzero)) {
-        npy_set_floatstatus_divbyzero();
+
     }
 
     for (; len > 0; --len, ++src1, ++src2, ++dst1, ++dst2) {
         const npyv_lanetype_@sfx@ a = *src1;
         const npyv_lanetype_@sfx@ b = *src2;
         if (NPY_UNLIKELY(b == 0)) {
-            npy_set_floatstatus_divbyzero();
+
             *dst1 = 0;
             *dst2 = 0;
         } else{
@@ -349,7 +349,7 @@ vsx4_simd_@func@_contig_@sfx@(char **args, npy_intp len)
         npyv_@sfx@ c = vsx4_@simd@_@sfx@(a, b);
         npyv_store_@sfx@(dst1, c);
         if (NPY_UNLIKELY(vec_any_eq(b, vzero))) {
-            npy_set_floatstatus_divbyzero();
+
         }
     }
 
@@ -357,7 +357,7 @@ vsx4_simd_@func@_contig_@sfx@(char **args, npy_intp len)
         const npyv_lanetype_@sfx@ a = *src1;
         const npyv_lanetype_@sfx@ b = *src2;
         if (NPY_UNLIKELY(b == 0)) {
-            npy_set_floatstatus_divbyzero();
+
             *dst1 = 0;
         } else{
             *dst1 = a @op@ b;
@@ -490,14 +490,14 @@ vsx4_simd_@func@_contig_@sfx@(char **args, npy_intp len)
 #endif
         npyv_store_@sfx@(dst1, rem);
         if (NPY_UNLIKELY(vec_any_eq(b, vzero))) {
-            npy_set_floatstatus_divbyzero();
+
         }
 #endif
     }
 
 #if @id@ >= 2 /* divide and divmod */
     if (!vec_all_eq(warn, vzero)) {
-        npy_set_floatstatus_divbyzero();
+
     }
 #endif
 
@@ -506,7 +506,7 @@ vsx4_simd_@func@_contig_@sfx@(char **args, npy_intp len)
         const npyv_lanetype_@sfx@ a = *src1;
         const npyv_lanetype_@sfx@ b = *src2;
         if (b == 0 || (a == NPY_MIN_INT@len@ && b == -1)) {
-            npy_set_floatstatus_divbyzero();
+
             *dst1 = 0;
             *dst2 = 0;
         }
@@ -527,7 +527,7 @@ vsx4_simd_@func@_contig_@sfx@(char **args, npy_intp len)
         const npyv_lanetype_@sfx@ b = *src2;
 #if @id@ == 2 /* divide */
         if (b == 0 || (a == NPY_MIN_INT@len@ && b == -1)) {
-            npy_set_floatstatus_divbyzero();
+
             *dst1 = 0;
         }
         else {
@@ -538,7 +538,7 @@ vsx4_simd_@func@_contig_@sfx@(char **args, npy_intp len)
         }
 #else /* fmod and remainder */
         if (NPY_UNLIKELY(b == 0)) {
-            npy_set_floatstatus_divbyzero();
+
             *dst1 = 0;
         } else{
             *dst1 = a % b;
@@ -615,13 +615,13 @@ vsx4_simd_@func@_by_scalar_contig_@sfx@(char **args, npy_intp len)
 
 #if @id@ == 3 /* divmod */
     if (!vec_all_eq(warn, vzero)) {
-        npy_set_floatstatus_divbyzero();
+
     }
 
     for (; len > 0; --len, ++src1, ++dst1, ++dst2) {
         const npyv_lanetype_@sfx@ a = *src1;
         if (a == NPY_MIN_INT@len@ && scalar == -1) {
-            npy_set_floatstatus_divbyzero();
+
             *dst1 = 0;
             *dst2 = 0;
         }
@@ -686,7 +686,7 @@ NPY_FINLINE @type@ floor_div_@TYPE@(const @type@ n, const @type@ d)
      * (i.e. a different approach than npy_set_floatstatus_divbyzero()).
      */
     if (NPY_UNLIKELY(d == 0 || (n == NPY_MIN_@TYPE@ && d == -1))) {
-        npy_set_floatstatus_divbyzero();
+
         return 0;
     }
     @type@ r = n / d;
@@ -759,7 +759,7 @@ NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(@TYPE@_divide)
         BINARY_REDUCE_LOOP(@type@) {
             const @type@ d = *(@type@ *)ip2;
             if (NPY_UNLIKELY(d == 0)) {
-                npy_set_floatstatus_divbyzero();
+
                 io1 = 0;
             } else {
                 io1 /= d;
@@ -785,7 +785,7 @@ NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(@TYPE@_divide)
             const @type@ in1 = *(@type@ *)ip1;
             const @type@ in2 = *(@type@ *)ip2;
             if (NPY_UNLIKELY(in2 == 0)) {
-                npy_set_floatstatus_divbyzero();
+
                 *((@type@ *)op1) = 0;
             } else{
                 *((@type@ *)op1) = in1 / in2;
@@ -839,7 +839,7 @@ NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(@TYPE@_fmod)
         const @type@ in1 = *(@type@ *)ip1;
         const @type@ in2 = *(@type@ *)ip2;
         if (NPY_UNLIKELY(in2 == 0)) {
-            npy_set_floatstatus_divbyzero();
+
             *((@type@ *)op1) = 0;
         } else{
             *((@type@ *)op1)= in1 % in2;
@@ -867,7 +867,7 @@ NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(@TYPE@_remainder)
         const @type@ in1 = *(@type@ *)ip1;
         const @type@ in2 = *(@type@ *)ip2;
         if (NPY_UNLIKELY(in2 == 0)) {
-            npy_set_floatstatus_divbyzero();
+
             *((@type@ *)op1) = 0;
         } else{
 #if @is_signed@
@@ -908,7 +908,7 @@ NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(@TYPE@_divmod)
         const @type@ in2 = *(@type@ *)ip2;
         /* see FIXME note for divide above */
         if (NPY_UNLIKELY(in2 == 0 || (in1 == NPY_MIN_@TYPE@ && in2 == -1))) {
-            npy_set_floatstatus_divbyzero();
+
             *((@type@ *)op1) = 0;
             *((@type@ *)op2) = 0;
         }
@@ -931,7 +931,7 @@ NPY_NO_EXPORT void NPY_CPU_DISPATCH_CURFX(@TYPE@_divmod)
         const @type@ in1 = *(@type@ *)ip1;
         const @type@ in2 = *(@type@ *)ip2;
         if (NPY_UNLIKELY(in2 == 0)) {
-            npy_set_floatstatus_divbyzero();
+
             *((@type@ *)op1) = 0;
             *((@type@ *)op2) = 0;
         }
