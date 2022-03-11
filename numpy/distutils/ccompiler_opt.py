@@ -476,7 +476,7 @@ class _Config:
                     flags="-mcpu=power9 -mtune=power9", implies_detect=False
                 ),
                 VSX4 = dict(
-                    flags="-mcpu=power10 -mtune=power10", implies_detect=False
+                    flags="-mcpu=power10 -mtune=power10 --save-temps", implies_detect=False
                 )
             )
             if self.cc_is_clang:
