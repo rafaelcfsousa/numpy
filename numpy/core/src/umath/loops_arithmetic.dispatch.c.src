@@ -148,18 +148,18 @@ vsx4_div_@t@8(npyv_@t@8 a, npyv_@t@8 b)
 #if @signed@
     npyv_s16x2 ta, tb;
     npyv_s32x2 ahi, alo, bhi, blo;
-    ta.val[0] = (npyv_s16)vec_unpackh(a);
-    ta.val[1] = (npyv_s16)vec_unpackl(a);
-    tb.val[0] = (npyv_s16)vec_unpackh(b);
-    tb.val[1] = (npyv_s16)vec_unpackl(b);
-    ahi.val[0] = (npyv_s32)vec_unpackh(ta.val[0]);
-    ahi.val[1] = (npyv_s32)vec_unpackl(ta.val[0]);
-    alo.val[0] = (npyv_s32)vec_unpackh(ta.val[1]);
-    alo.val[1] = (npyv_s32)vec_unpackl(ta.val[1]);
-    bhi.val[0] = (npyv_s32)vec_unpackh(tb.val[0]);
-    bhi.val[1] = (npyv_s32)vec_unpackl(tb.val[0]);
-    blo.val[0] = (npyv_s32)vec_unpackh(tb.val[1]);
-    blo.val[1] = (npyv_s32)vec_unpackl(tb.val[1]);
+    ta.val[0] = vec_unpackh(a);
+    ta.val[1] = vec_unpackl(a);
+    tb.val[0] = vec_unpackh(b);
+    tb.val[1] = vec_unpackl(b);
+    ahi.val[0] = vec_unpackh(ta.val[0]);
+    ahi.val[1] = vec_unpackl(ta.val[0]);
+    alo.val[0] = vec_unpackh(ta.val[1]);
+    alo.val[1] = vec_unpackl(ta.val[1]);
+    bhi.val[0] = vec_unpackh(tb.val[0]);
+    bhi.val[1] = vec_unpackl(tb.val[0]);
+    blo.val[0] = vec_unpackh(tb.val[1]);
+    blo.val[1] = vec_unpackl(tb.val[1]);
 #else
     npyv_u16x2 a_expand = npyv_expand_u16_u8(a);
     npyv_u16x2 b_expand = npyv_expand_u16_u8(b);
@@ -172,9 +172,9 @@ vsx4_div_@t@8(npyv_@t@8 a, npyv_@t@8 b)
     npyv_@t@32 v2 = vec_div(ahi.val[1], bhi.val[1]);
     npyv_@t@32 v3 = vec_div(alo.val[0], blo.val[0]);
     npyv_@t@32 v4 = vec_div(alo.val[1], blo.val[1]);
-    npyv_@t@16 hi = (npyv_@t@16)vec_pack(v1, v2);
-    npyv_@t@16 lo = (npyv_@t@16)vec_pack(v3, v4);
-    return (npyv_@t@8)vec_pack(hi, lo);
+    npyv_@t@16 hi = vec_pack(v1, v2);
+    npyv_@t@16 lo = vec_pack(v3, v4);
+    return vec_pack(hi, lo);
 }
 
 NPY_FINLINE npyv_@t@16
@@ -183,17 +183,17 @@ vsx4_div_@t@16(npyv_@t@16 a, npyv_@t@16 b)
 #if @signed@
     npyv_s32x2 a_expand;
     npyv_s32x2 b_expand;
-    a_expand.val[0] = (npyv_s32)vec_unpackh(a);
-    a_expand.val[1] = (npyv_s32)vec_unpackl(a);
-    b_expand.val[0] = (npyv_s32)vec_unpackh(b);
-    b_expand.val[1] = (npyv_s32)vec_unpackl(b);
+    a_expand.val[0] = vec_unpackh(a);
+    a_expand.val[1] = vec_unpackl(a);
+    b_expand.val[0] = vec_unpackh(b);
+    b_expand.val[1] = vec_unpackl(b);
 #else
     npyv_u32x2 a_expand = npyv_expand_@t@32_@t@16(a);
     npyv_u32x2 b_expand = npyv_expand_@t@32_@t@16(b);
 #endif
     npyv_@t@32 v1 = vec_div(a_expand.val[0], b_expand.val[0]);
     npyv_@t@32 v2 = vec_div(a_expand.val[1], b_expand.val[1]);
-    return (npyv_@t@16)vec_pack(v1, v2);
+    return vec_pack(v1, v2);
 }
 
 #define vsx4_div_@t@32 vec_div

@@ -28,8 +28,8 @@ NPY_FINLINE npyv_s16x2
 vsx4_expand_s16_s8(npyv_s8 data)
 {
     npyv_s16x2 r;
-    r.val[0] = (npyv_s16)vec_unpackh(data);
-    r.val[1] = (npyv_s16)vec_unpackl(data);
+    r.val[0] = vec_unpackh(data);
+    r.val[1] = vec_unpackl(data);
     return r;
 }
 
@@ -38,8 +38,8 @@ NPY_FINLINE npyv_s32x2
 vsx4_expand_s32_s16(npyv_s16 data)
 {
     npyv_s32x2 r;
-    r.val[0] = (npyv_s32)vec_unpackh(data);
-    r.val[1] = (npyv_s32)vec_unpackl(data);
+    r.val[0] = vec_unpackh(data);
+    r.val[1] = vec_unpackl(data);
     return r;
 }
 
@@ -78,9 +78,9 @@ vsx4_@simd@_@t@8(npyv_@t@8 a, npyv_@t@8 b)
     npyv_@t@32 v2 = vec_@simd@(a_expand.hi.val[1], b_expand.hi.val[1]);
     npyv_@t@32 v3 = vec_@simd@(a_expand.lo.val[0], b_expand.lo.val[0]);
     npyv_@t@32 v4 = vec_@simd@(a_expand.lo.val[1], b_expand.lo.val[1]);
-    npyv_@t@16 hi = (npyv_@t@16)vec_pack(v1, v2);
-    npyv_@t@16 lo = (npyv_@t@16)vec_pack(v3, v4);
-    return (npyv_@t@8)vec_pack(hi, lo);
+    npyv_@t@16 hi = vec_pack(v1, v2);
+    npyv_@t@16 lo = vec_pack(v3, v4);
+    return vec_pack(hi, lo);
 }
 
 NPY_FINLINE npyv_@t@8
@@ -91,9 +91,9 @@ vsx4_@simd@_scalar_@t@8(npyv_@t@8 a, const vsx4_@t@32x4 b_expand)
     npyv_@t@32 v2 = vec_@simd@(a_expand.hi.val[1], b_expand.hi.val[1]);
     npyv_@t@32 v3 = vec_@simd@(a_expand.lo.val[0], b_expand.lo.val[0]);
     npyv_@t@32 v4 = vec_@simd@(a_expand.lo.val[1], b_expand.lo.val[1]);
-    npyv_@t@16 hi = (npyv_@t@16)vec_pack(v1, v2);
-    npyv_@t@16 lo = (npyv_@t@16)vec_pack(v3, v4);
-    return (npyv_@t@8)vec_pack(hi, lo);
+    npyv_@t@16 hi = vec_pack(v1, v2);
+    npyv_@t@16 lo = vec_pack(v3, v4);
+    return vec_pack(hi, lo);
 }
 
 NPY_FINLINE npyv_@t@16
@@ -103,7 +103,7 @@ vsx4_@simd@_@t@16(npyv_@t@16 a, npyv_@t@16 b)
     npyv_@t@32x2 b_expand = @expand@_@t@32_@t@16(b);
     npyv_@t@32 v1 = vec_@simd@(a_expand.val[0], b_expand.val[0]);
     npyv_@t@32 v2 = vec_@simd@(a_expand.val[1], b_expand.val[1]);
-    return (npyv_@t@16)vec_pack(v1, v2);
+    return vec_pack(v1, v2);
 }
 
 NPY_FINLINE npyv_@t@16
@@ -112,7 +112,7 @@ vsx4_@simd@_scalar_@t@16(npyv_@t@16 a, const npyv_@t@32x2 b_expand)
     npyv_@t@32x2 a_expand = @expand@_@t@32_@t@16(a);
     npyv_@t@32 v1 = vec_@simd@(a_expand.val[0], b_expand.val[0]);
     npyv_@t@32 v2 = vec_@simd@(a_expand.val[1], b_expand.val[1]);
-    return (npyv_@t@16)vec_pack(v1, v2);
+    return vec_pack(v1, v2);
 }
 
 #define vsx4_@simd@_@t@32 vec_@simd@
