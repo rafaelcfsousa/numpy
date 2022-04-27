@@ -494,7 +494,7 @@ defdict = {
     Ufunc(2, 1, True_,
           docstrings.get('numpy.core.umath.logical_and'),
           'PyUFunc_SimpleBinaryComparisonTypeResolver',
-          TD(bints+inexact, out='?', simd=[('avx2', ints), ('vsx', '?fd')]),
+          TD(nodatetime_or_obj, out='?', simd=[('avx2', ints), ('vsx', '?fd')]),
           TD(O, f='npy_ObjectLogicalAnd'),
           ),
 'logical_not':
@@ -508,7 +508,7 @@ defdict = {
     Ufunc(2, 1, False_,
           docstrings.get('numpy.core.umath.logical_or'),
           'PyUFunc_SimpleBinaryComparisonTypeResolver',
-          TD(bints+inexact, out='?', simd=[('avx2', ints), ('vsx', '?fd')]),
+          TD(nodatetime_or_obj, out='?', simd=[('avx2', ints), ('vsx', '?fd')]),
           TD(O, f='npy_ObjectLogicalOr'),
           ),
 'logical_xor':

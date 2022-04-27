@@ -110,7 +110,6 @@ OPTIONAL_HEADERS = [
                 "xmmintrin.h",  # SSE
                 "emmintrin.h",  # SSE2
                 "immintrin.h",  # AVX
-                "altivec.h",  # VSX
                 "features.h",  # for glibc version linux
                 "xlocale.h",  # see GH#8367
                 "dlfcn.h", # dladdr
