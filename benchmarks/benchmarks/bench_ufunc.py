@@ -1,6 +1,7 @@
 from .common import Benchmark, get_squares_
 
 import numpy as np
+import os
 
 
 ufuncs = ['abs', 'absolute', 'add', 'arccos', 'arccosh', 'arcsin', 'arcsinh',
@@ -150,18 +151,82 @@ class CustomScalarFloorDivideInt(Benchmark):
     def time_floor_divide_int(self, dtype, divisor):
         self.x // divisor
 
-class CustomArrayFloorDivideInt(Benchmark):
-    params = (np.sctypes['int'] + np.sctypes['uint'], [100, 10000, 1000000])
-    param_names = ['dtype', 'size']
+class CustomArrayComparision(Benchmark):
+    params = ([100, 1000, 10000, 100000, 1000000, 10000000],
+              ["equal", "not_equal", "less", "less_equal", "greater", "greater_equal", "logical_or", "logical_and"])
+    param_names = ['size', 'op_name']
 
-    def setup(self, dtype, size):
-        iinfo = np.iinfo(dtype)
-        self.x = np.random.randint(
-                    iinfo.min, iinfo.max, size=size, dtype=dtype)
-        self.y = np.random.randint(2, 32, size=size, dtype=dtype)
+    def setup(self, size, op_name):
+        self.x = np.random.choice(a=[False, True], size=size)
+        self.y = np.random.choice(a=[False, True], size=size)
 
-    def time_floor_divide_int(self, dtype, size):
-        self.x // self.y
+    def time_comparison(self, size, op_name):
+        op = getattr(np, op_name)
+        op(self.x, self.y)
+
+
+class CustomOthersBool(Benchmark):
+    params = ([100, 1000, 10000, 100000, 1000000, 10000000],
+              ["absolute", "logical_not"])
+    param_names = ['size', 'op_name']
+
+    def setup(self, size, op_name):
+        self.x = np.random.choice(a=[False, True], size=size)
+
+    def time_others_bool(self, size, op_name):
+        op = getattr(np, op_name)
+        op(self.x)
+
+class CustomArrayComparisionFP(Benchmark):
+    params = ([100, 1000, 10000, 100000, 1000000, 10000000],
+              ["equal", "not_equal", "less", "less_equal", "greater", "greater_equal"],
+              [np.single, np.double])
+    param_names = ['size', 'op_name', 'dtype']
+
+    def setup(self, size, op_name, dtype):
+        self.x = np.random.rand(size).astype(dtype)
+        self.y = np.random.rand(size).astype(dtype)
+
+    def time_comparison(self, size, op_name, dtype):
+        op = getattr(np, op_name)
+        op(self.x, self.y)
+
+class CustomScalarComparision(Benchmark):
+    params = ([100, 1000, 10000, 100000, 1000000],
+              ["equal", "not_equal", "less", "less_equal", "greater", "greater_equal"])
+    param_names = ['size', 'op_name']
+
+    def setup(self, size, op_name):
+        self.x = np.random.choice(a=[False, True], size=size)
+
+    def time_comparison(self, size, op_name):
+        op = getattr(np, op_name)
+        op(self.x, True)
+
+class CustomScalarComparisionFP(Benchmark):
+    params = ([100, 1000, 10000, 100000, 1000000],
+              ["equal", "not_equal", "less", "less_equal", "greater", "greater_equal"],
+              [np.single, np.double])
+    param_names = ['size', 'op_name', 'dtype']
+
+    def setup(self, size, op_name, dtype):
+        self.x = np.random.rand(size).astype(dtype)
+
+    def time_comparison(self, size, op_name, dtype):
+        op = getattr(np, op_name)
+        op(self.x, 2.3)
+
+class CustomTrigonometricF32(Benchmark):
+    params = ([100, 1000, 10000, 100000, 1000000],
+              ["cos", "sin", "tanh"])
+    param_names = ['size', 'op_name']
+
+    def setup(self, size, op_name):
+        self.x = np.random.rand(size).astype(np.single)
+
+    def time_comparison(self, size, op_name):
+        op = getattr(np, op_name)
+        op(self.x)
 
 
 class Scalar(Benchmark):
